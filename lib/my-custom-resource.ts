@@ -29,7 +29,7 @@ export class MyCustomResource extends Construct {
 
     const myProvider = new cr.Provider(this, 'MyProvider', {
       onEventHandler: onEvent,
-      logRetention: logs.RetentionDays.ONE_DAY  
+      logRetention: logs.RetentionDays.ONE_DAY
     });
 
     const resource = new cdk.CustomResource(this, 'Resource1', { serviceToken: myProvider.serviceToken, properties: props });

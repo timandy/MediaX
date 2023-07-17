@@ -5,7 +5,7 @@ const AWS = require('aws-sdk');
 const https = require('https');
 const Sharp = require('sharp');
 
-const S3 = new AWS.S3({ signatureVersion: 'v4', httpOptions: { agent: new https.Agent({ keepAlive: true }) } });
+const S3 = new AWS.S3({signatureVersion: 'v4', httpOptions: {agent: new https.Agent({keepAlive: true})}});
 const S3_ORIGINAL_IMAGE_BUCKET = process.env.originalImageBucketName;
 const S3_TRANSFORMED_IMAGE_BUCKET = process.env.transformedImageBucketName;
 const TRANSFORMED_IMAGE_CACHE_TTL = process.env.transformedImageCacheTTL;
@@ -31,12 +31,12 @@ exports.handler = async (event) => {
     let originalImage;
     let contentType;
     try {
-        originalImage = await S3.getObject({ Bucket: S3_ORIGINAL_IMAGE_BUCKET, Key: originalImagePath }).promise();
+        originalImage = await S3.getObject({Bucket: S3_ORIGINAL_IMAGE_BUCKET, Key: originalImagePath}).promise();
         contentType = originalImage.ContentType;
     } catch (error) {
         return sendError(500, 'error downloading original image', error);
     }
-    let transformedImage = Sharp(originalImage.Body, { failOn: 'none' });
+    let transformedImage = Sharp(originalImage.Body, {failOn: 'none'});
     // Get image orientation to rotate if needed
     const imageMetadata = await transformedImage.metadata();
     //  execute the requested operations 
@@ -60,13 +60,30 @@ exports.handler = async (event) => {
         if (operationsJSON['format']) {
             var isLossy = false;
             switch (operationsJSON['format']) {
-                case 'jpeg': contentType = 'image/jpeg'; isLossy = true; break;
-                case 'svg': contentType = 'image/svg+xml'; break;
-                case 'gif': contentType = 'image/gif'; break;
-                case 'webp': contentType = 'image/webp'; isLossy = true; break;
-                case 'png': contentType = 'image/png'; break;
-                case 'avif': contentType = 'image/avif'; isLossy = true; break;
-                default: contentType = 'image/jpeg'; isLossy = true;
+                case 'jpeg':
+                    contentType = 'image/jpeg';
+                    isLossy = true;
+                    break;
+                case 'svg':
+                    contentType = 'image/svg+xml';
+                    break;
+                case 'gif':
+                    contentType = 'image/gif';
+                    break;
+                case 'webp':
+                    contentType = 'image/webp';
+                    isLossy = true;
+                    break;
+                case 'png':
+                    contentType = 'image/png';
+                    break;
+                case 'avif':
+                    contentType = 'image/avif';
+                    isLossy = true;
+                    break;
+                default:
+                    contentType = 'image/jpeg';
+                    isLossy = true;
             }
             if (operationsJSON['quality'] && isLossy) {
                 transformedImage = transformedImage.toFormat(operationsJSON['format'], {

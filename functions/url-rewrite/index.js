@@ -9,7 +9,7 @@ function handler(event) {
     if (request.querystring) {
         Object.keys(request.querystring).forEach(operation => {
             switch (operation.toLowerCase()) {
-                case 'format': 
+                case 'format':
                     var SUPPORTED_FORMATS = ['auto', 'jpeg', 'webp', 'avif', 'png', 'svg', 'gif'];
                     if (request.querystring[operation]['value'] && SUPPORTED_FORMATS.includes(request.querystring[operation]['value'].toLowerCase())) {
                         var format = request.querystring[operation]['value'].toLowerCase(); // normalize to lowercase
@@ -20,7 +20,7 @@ function handler(event) {
                                     format = 'avif';
                                 } else if (request.headers['accept'].value.includes("webp")) {
                                     format = 'webp';
-                                } 
+                                }
                             }
                         }
                         normalizedOperations['format'] = format;
@@ -53,26 +53,27 @@ function handler(event) {
                         }
                     }
                     break;
-                default: break;
+                default:
+                    break;
             }
         });
         //rewrite the path to normalized version if valid operations are found
         if (Object.keys(normalizedOperations).length > 0) {
             // put them in order
             var normalizedOperationsArray = [];
-            if (normalizedOperations.format) normalizedOperationsArray.push('format='+normalizedOperations.format);
-            if (normalizedOperations.quality) normalizedOperationsArray.push('quality='+normalizedOperations.quality);
-            if (normalizedOperations.width) normalizedOperationsArray.push('width='+normalizedOperations.width);
-            if (normalizedOperations.height) normalizedOperationsArray.push('height='+normalizedOperations.height);
-            request.uri = originalImagePath + '/' + normalizedOperationsArray.join(',');     
+            if (normalizedOperations.format) normalizedOperationsArray.push('format=' + normalizedOperations.format);
+            if (normalizedOperations.quality) normalizedOperationsArray.push('quality=' + normalizedOperations.quality);
+            if (normalizedOperations.width) normalizedOperationsArray.push('width=' + normalizedOperations.width);
+            if (normalizedOperations.height) normalizedOperationsArray.push('height=' + normalizedOperations.height);
+            request.uri = originalImagePath + '/' + normalizedOperationsArray.join(',');
         } else {
             // If no valid operation is found, flag the request with /original path suffix
-            request.uri = originalImagePath + '/original';     
+            request.uri = originalImagePath + '/original';
         }
 
     } else {
         // If no query strings are found, flag the request with /original path suffix
-        request.uri = originalImagePath + '/original'; 
+        request.uri = originalImagePath + '/original';
     }
     // remove query strings
     request['querystring'] = {};
