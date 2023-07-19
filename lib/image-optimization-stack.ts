@@ -22,6 +22,7 @@ let S3_IMAGE_BUCKET_NAME: string;
 // CloudFront parameters
 let CLOUDFRONT_ORIGIN_SHIELD_REGION = ORIGIN_SHIELD_MAPPING.get(process.env.AWS_REGION || process.env.CDK_DEFAULT_REGION || 'us-east-1');
 let CLOUDFRONT_CORS_ENABLED = 'true';
+let CLOUDFRONT_DOMAIN_NAMES: string[];
 // Parameters of transformed images
 let S3_TRANSFORMED_IMAGE_EXPIRATION_DURATION = '90';
 let S3_TRANSFORMED_IMAGE_CACHE_TTL = 'max-age=31622400';
@@ -218,14 +219,15 @@ export class ImageOptimizationStack extends Stack {
         }
       });
 
-      //创建 CloudFront 分配
-      const imageDelivery = new cloudfront.Distribution(this, 'imageDeliveryDistribution', {
+      // 创建 CloudFront 分配
+      const cfDistribution = new cloudfront.Distribution(this, 'imageDistribution', {
         comment: `image optimization - ${originImageBucket.bucketName}`,
+        domainNames: CLOUDFRONT_DOMAIN_NAMES,
         defaultBehavior: imageDeliveryCacheBehaviorConfig
       });
       new CfnOutput(this, 'imageDeliveryDistributionCfn', {
         description: 'Domain name of image delivery',
-        value: imageDelivery.distributionDomainName
+        value: cfDistribution.distributionDomainName
       });
     }
   }
