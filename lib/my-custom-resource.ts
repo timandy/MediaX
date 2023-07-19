@@ -8,6 +8,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 
 export interface MyCustomResourceProps {
+  AppId: string;
   Url: string;
 }
 
@@ -19,7 +20,7 @@ export class MyCustomResource extends Construct {
 
 
     const onEvent = new lambda.SingletonFunction(this, 'Singleton', {
-      uuid: 'f7d4f730-4ee1-11e8-9c2d-fa7ae01bbebc',
+      uuid: props.AppId,
       code: lambda.Code.fromAsset('functions/custom-resource'),
       handler: 'index.on_event',
       timeout: cdk.Duration.seconds(300),
@@ -35,6 +36,5 @@ export class MyCustomResource extends Construct {
     const resource = new cdk.CustomResource(this, 'Resource1', { serviceToken: myProvider.serviceToken, properties: props });
 
     this.hostname = resource.getAtt('HostName').toString();
-
   }
 }

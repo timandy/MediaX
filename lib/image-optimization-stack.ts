@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 
-import { aws_cloudfront as cloudfront, aws_cloudfront_origins as origins, aws_iam as iam, aws_lambda as lambda, aws_logs as logs, aws_s3 as s3, aws_s3_deployment as s3deploy, CfnOutput, Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
+import { aws_cloudfront as cloudfront, aws_cloudfront_origins as origins, aws_iam as iam, aws_lambda as lambda, aws_logs as logs, aws_s3 as s3, CfnOutput, Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { MyCustomResource } from './my-custom-resource';
 import { createHash } from 'crypto';
@@ -16,19 +16,19 @@ const ORIGIN_SHIELD_MAPPING = new Map([['af-south-1', 'eu-west-2'], ['ap-east-1'
 // Stack Parameters
 
 // related to architecture. If set to false, transformed images are not stored in S3, and all image requests land on Lambda
-var STORE_TRANSFORMED_IMAGES = 'true';
+let STORE_TRANSFORMED_IMAGES = 'true';
 // Parameters of S3 bucket where original images are stored
-var S3_IMAGE_BUCKET_NAME: string;
+let S3_IMAGE_BUCKET_NAME: string;
 // CloudFront parameters
-var CLOUDFRONT_ORIGIN_SHIELD_REGION = ORIGIN_SHIELD_MAPPING.get(process.env.AWS_REGION || process.env.CDK_DEFAULT_REGION || 'us-east-1');
-var CLOUDFRONT_CORS_ENABLED = 'true';
+let CLOUDFRONT_ORIGIN_SHIELD_REGION = ORIGIN_SHIELD_MAPPING.get(process.env.AWS_REGION || process.env.CDK_DEFAULT_REGION || 'us-east-1');
+let CLOUDFRONT_CORS_ENABLED = 'true';
 // Parameters of transformed images
-var S3_TRANSFORMED_IMAGE_EXPIRATION_DURATION = '90';
-var S3_TRANSFORMED_IMAGE_CACHE_TTL = 'max-age=31622400';
+let S3_TRANSFORMED_IMAGE_EXPIRATION_DURATION = '90';
+let S3_TRANSFORMED_IMAGE_CACHE_TTL = 'max-age=31622400';
 // Lambda Parameters
-var LAMBDA_MEMORY = '1500';
-var LAMBDA_TIMEOUT = '60';
-var LOG_TIMING = 'false';
+let LAMBDA_MEMORY = '1500';
+let LAMBDA_TIMEOUT = '60';
+let LOG_TIMING = 'false';
 
 type ImageDeliveryCacheBehaviorConfig = {
   origin: any;
@@ -39,9 +39,9 @@ type ImageDeliveryCacheBehaviorConfig = {
 };
 
 type LambdaEnv = {
-  originalImageBucketName: string,
-  transformedImageBucketName?: any;
-  transformedImageCacheTTL: string,
+  originBucketName: string,
+  cacheBucketName?: any;
+  cacheTTL: string,
   secretKey: string,
   logTiming: string,
 }
@@ -50,7 +50,7 @@ export class ImageOptimizationStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // Change stack parameters based on provided context
+    // 获取参数
     STORE_TRANSFORMED_IMAGES = this.node.tryGetContext('STORE_TRANSFORMED_IMAGES') || STORE_TRANSFORMED_IMAGES;
     S3_TRANSFORMED_IMAGE_EXPIRATION_DURATION = this.node.tryGetContext('S3_TRANSFORMED_IMAGE_EXPIRATION_DURATION') || S3_TRANSFORMED_IMAGE_EXPIRATION_DURATION;
     S3_TRANSFORMED_IMAGE_CACHE_TTL = this.node.tryGetContext('S3_TRANSFORMED_IMAGE_CACHE_TTL') || S3_TRANSFORMED_IMAGE_CACHE_TTL;
@@ -61,96 +61,65 @@ export class ImageOptimizationStack extends Stack {
     LAMBDA_TIMEOUT = this.node.tryGetContext('LAMBDA_TIMEOUT') || LAMBDA_TIMEOUT;
     LOG_TIMING = this.node.tryGetContext('LOG_TIMING') || LOG_TIMING;
 
-    // Create secret key to be used between CloudFront and Lambda URL for access control
-    const SECRET_KEY = createHash('md5').update(this.node.addr).digest('hex');
-
-    // For the bucket having original images, either use an external one, or create one with some samples photos.
-    var originalImageBucket;
-    var transformedImageBucket;
-    var sampleWebsiteDelivery;
-
-    if (S3_IMAGE_BUCKET_NAME) {
-      originalImageBucket = s3.Bucket.fromBucketName(this, 'imported-original-image-bucket', S3_IMAGE_BUCKET_NAME);
-      new CfnOutput(this, 'OriginalImagesS3Bucket', {
-        description: 'S3 bucket where original images are stored',
-        value: originalImageBucket.bucketName
-      });
-    } else {
-      originalImageBucket = new s3.Bucket(this, 's3-sample-original-image-bucket', {
-        removalPolicy: RemovalPolicy.DESTROY,
-        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-        encryption: s3.BucketEncryption.S3_MANAGED,
-        enforceSSL: true,
-        autoDeleteObjects: true,
-      });
-      new s3deploy.BucketDeployment(this, 'DeployWebsite', {
-        sources: [s3deploy.Source.asset('./image-sample')],
-        destinationBucket: originalImageBucket,
-        destinationKeyPrefix: 'images/rio/',
-      });
-      var sampleWebsiteBucket = new s3.Bucket(this, 's3-sample-website-bucket', {
-        removalPolicy: RemovalPolicy.DESTROY,
-        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-        encryption: s3.BucketEncryption.S3_MANAGED,
-        enforceSSL: true,
-        autoDeleteObjects: true,
-      });
-
-      sampleWebsiteDelivery = new cloudfront.Distribution(this, 'websiteDeliveryDistribution', {
-        comment: 'image optimization - sample website',
-        defaultRootObject: 'index.html',
-        defaultBehavior: {
-          origin: new origins.S3Origin(sampleWebsiteBucket),
-          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        }
-      });
-      new CfnOutput(this, 'SampleWebsiteDomain', {
-        description: 'Sample website domain',
-        value: sampleWebsiteDelivery.distributionDomainName
-      });
-      new CfnOutput(this, 'SampleWebsiteS3Bucket', {
-        description: 'S3 bucket use by the sample website',
-        value: sampleWebsiteBucket.bucketName
-      });
-      new CfnOutput(this, 'OriginalImagesS3Bucket', {
-        description: 'S3 bucket where original images are stored',
-        value: originalImageBucket.bucketName
-      });
+    // 未指定源桶, 直接抛出异常
+    if (!S3_IMAGE_BUCKET_NAME) {
+      throw new Error('S3_IMAGE_BUCKET_NAME can not be empty')
     }
 
-    // create bucket for transformed images if enabled in the architecture
+    // 创建一个自定义密码, 访问 lambda 时使用
+    const SECRET_KEY = createHash('md5').update(this.node.addr).digest('hex');
+
+    // 声明源桶和缓存桶
+    let originImageBucket;
+    let cacheImageBucket;
+    const iamPolicyStatements: iam.PolicyStatement[] = [];//权限语句组
+
+    // 源桶
+    originImageBucket = s3.Bucket.fromBucketName(this, 'originImageS3Bucket', S3_IMAGE_BUCKET_NAME);
+    new CfnOutput(this, 'originImageS3BucketCfn', {
+      description: 'S3 bucket where origin images are stored',
+      value: originImageBucket.bucketName
+    });
+    iamPolicyStatements.push(new iam.PolicyStatement({
+      actions: ['s3:GetObject'],
+      resources: ['arn:aws:s3:::' + originImageBucket.bucketName + '/*'],
+    }));
+
+    // 如果开启了存储缩略图, 为转换后的映像创建存储桶, 默认开启
     if (STORE_TRANSFORMED_IMAGES === 'true') {
-      transformedImageBucket = new s3.Bucket(this, 's3-transformed-image-bucket', {
+      cacheImageBucket = new s3.Bucket(this, 'cacheImageS3Bucket', {
+        bucketName: `${originImageBucket.bucketName}.thumb`,
         removalPolicy: RemovalPolicy.DESTROY,
         autoDeleteObjects: true,
         lifecycleRules: [
           {
-            expiration: Duration.days(parseInt(S3_TRANSFORMED_IMAGE_EXPIRATION_DURATION)),
+            expiration: Duration.days(parseInt(S3_TRANSFORMED_IMAGE_EXPIRATION_DURATION)), //缩略图存储天数, 默认 90 天
           },
         ],
       });
+      new CfnOutput(this, 'cacheImageS3BucketCfn', {
+        description: 'S3 bucket where transformed images are stored',
+        value: cacheImageBucket.bucketName
+      });
+      iamPolicyStatements.push(new iam.PolicyStatement({
+        actions: ['s3:PutObject'],
+        resources: ['arn:aws:s3:::' + cacheImageBucket.bucketName + '/*'],
+      }));
     }
 
-    // prepare env variable for Lambda 
-    var lambdaEnv: LambdaEnv = {
-      originalImageBucketName: originalImageBucket.bucketName,
-      transformedImageCacheTTL: S3_TRANSFORMED_IMAGE_CACHE_TTL,
+    // 准备 Lambda 环境变量
+    const lambdaEnv: LambdaEnv = {
+      originBucketName: originImageBucket.bucketName,
+      cacheTTL: S3_TRANSFORMED_IMAGE_CACHE_TTL,
       secretKey: SECRET_KEY,
       logTiming: LOG_TIMING,
     };
-    if (transformedImageBucket) lambdaEnv.transformedImageBucketName = transformedImageBucket.bucketName;
+    if (cacheImageBucket)
+      lambdaEnv.cacheBucketName = cacheImageBucket.bucketName;
 
-    // IAM policy to read from the S3 bucket containing the original images
-    const s3ReadOriginalImagesPolicy = new iam.PolicyStatement({
-      actions: ['s3:GetObject'],
-      resources: ['arn:aws:s3:::' + originalImageBucket.bucketName + '/*'],
-    });
-
-    // statements of the IAM policy to attach to Lambda
-    var iamPolicyStatements = [s3ReadOriginalImagesPolicy];
-
-    // Create Lambda for image processing
-    var lambdaProps = {
+    // 创建用于图像处理的 Lambda
+    const lambdaProps = {
+      functionName: `ImageOptimization_${id}`,
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('functions/image-processing'),
@@ -159,24 +128,30 @@ export class ImageOptimizationStack extends Stack {
       environment: lambdaEnv,
       logRetention: logs.RetentionDays.ONE_DAY,
     };
-    var imageProcessing = new lambda.Function(this, 'image-optimization', lambdaProps);
+    const imageProcessing = new lambda.Function(this, 'imageOptimization', lambdaProps);
+    imageProcessing.role?.attachInlinePolicy(
+      new iam.Policy(this, 'imageIamPolicy', {
+        policyName: `ImageIamPolicy_${id}`,
+        statements: iamPolicyStatements,
+      }),
+    );
 
-    // Enable Lambda URL
+    // 启用 Lambda URL 地址访问
     const imageProcessingURL = imageProcessing.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
     });
 
-    // Leverage a custom resource to get the hostname of the LambdaURL
+    // 利用自定义资源获取 Lambda URL 的主机名
     const imageProcessingHelper = new MyCustomResource(this, 'customResource', {
+      AppId: id,
       Url: imageProcessingURL.url
     });
 
-    // Create a CloudFront origin: S3 with fallback to Lambda when image needs to be transformed, otherwise with Lambda as sole origin
-    var imageOrigin;
-
-    if (transformedImageBucket) {
-      imageOrigin = new origins.OriginGroup({
-        primaryOrigin: new origins.S3Origin(transformedImageBucket, {
+    // 创建 CloudFront 源
+    let deliveryOrigin;
+    if (cacheImageBucket) {//保存缩略图: 首先尝试回源到缩略图桶, 如果失败则执行 Lambda
+      deliveryOrigin = new origins.OriginGroup({
+        primaryOrigin: new origins.S3Origin(cacheImageBucket, {
           originShieldRegion: CLOUDFRONT_ORIGIN_SHIELD_REGION,
         }),
         fallbackOrigin: new origins.HttpOrigin(imageProcessingHelper.hostname, {
@@ -187,16 +162,8 @@ export class ImageOptimizationStack extends Stack {
         }),
         fallbackStatusCodes: [403],
       });
-
-      // write policy for Lambda on the s3 bucket for transformed images
-      var s3WriteTransformedImagesPolicy = new iam.PolicyStatement({
-        actions: ['s3:PutObject'],
-        resources: ['arn:aws:s3:::' + transformedImageBucket.bucketName + '/*'],
-      });
-      iamPolicyStatements.push(s3WriteTransformedImagesPolicy);
-    } else {
-      console.log("else transformedImageBucket");
-      imageOrigin = new origins.HttpOrigin(imageProcessingHelper.hostname, {
+    } else {//不保存缩略图: 直接执行 Lambda
+      deliveryOrigin = new origins.HttpOrigin(imageProcessingHelper.hostname, {
         originShieldRegion: CLOUDFRONT_ORIGIN_SHIELD_REGION,
         customHeaders: {
           'x-origin-secret-header': SECRET_KEY,
@@ -204,28 +171,27 @@ export class ImageOptimizationStack extends Stack {
       });
     }
 
-    // attach iam policy to the role assumed by Lambda
-    imageProcessing.role?.attachInlinePolicy(
-      new iam.Policy(this, 'read-write-bucket-policy', {
-        statements: iamPolicyStatements,
-      }),
-    );
 
-    // Create a CloudFront Function for url rewrites
-    const urlRewriteFunction = new cloudfront.Function(this, 'urlRewrite', {
+    // 创建用于 url 重写的 CloudFront 函数
+    const urlRewriteFunction = new cloudfront.Function(this, 'imageUrlRewriteFunction', {
+      functionName: `ImageUrlRewriteFunction_${id}`,
       code: cloudfront.FunctionCode.fromFile({ filePath: 'functions/url-rewrite/index.js', }),
-      functionName: `urlRewriteFunction${this.node.addr}`,
     });
 
-    var imageDeliveryCacheBehaviorConfig: ImageDeliveryCacheBehaviorConfig = {
-      origin: imageOrigin,
+    // 创建 CloudFront 缓存策略
+    const cachePolicy = new cloudfront.CachePolicy(this, 'imageCachePolicy', {
+      cachePolicyName: `ImageCachePolicy_${id}`,
+      defaultTtl: Duration.hours(24),
+      maxTtl: Duration.days(365),
+      minTtl: Duration.seconds(0),
+      queryStringBehavior: cloudfront.CacheQueryStringBehavior.all()
+    });
+
+    // 创建 CloudFront 行为
+    const imageDeliveryCacheBehaviorConfig: ImageDeliveryCacheBehaviorConfig = {
+      origin: deliveryOrigin,
       viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-      cachePolicy: new cloudfront.CachePolicy(this, `ImageCachePolicy${this.node.addr}`, {
-        defaultTtl: Duration.hours(24),
-        maxTtl: Duration.days(365),
-        minTtl: Duration.seconds(0),
-        queryStringBehavior: cloudfront.CacheQueryStringBehavior.all()
-      }),
+      cachePolicy: cachePolicy,
       functionAssociations: [{
         eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
         function: urlRewriteFunction,
@@ -233,9 +199,9 @@ export class ImageOptimizationStack extends Stack {
     }
 
     if (CLOUDFRONT_CORS_ENABLED === 'true') {
-      // Creating a custom response headers policy. CORS allowed for all origins.
-      const imageResponseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, `ResponseHeadersPolicy${this.node.addr}`, {
-        responseHeadersPolicyName: 'ImageResponsePolicy',
+      //设置响应头策略
+      imageDeliveryCacheBehaviorConfig.responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, 'imageResponseHeadersPolicy', {
+        responseHeadersPolicyName: `ImageResponseHeadersPolicy_${id}`,
         corsBehavior: {
           accessControlAllowCredentials: false,
           accessControlAllowHeaders: ['*'],
@@ -244,24 +210,23 @@ export class ImageOptimizationStack extends Stack {
           accessControlMaxAge: Duration.seconds(600),
           originOverride: false,
         },
-        // recognizing image requests that were processed by this solution
+        //打标记
         customHeadersBehavior: {
           customHeaders: [
-            { header: 'x-aws-image-optimization', value: 'v1.0', override: true },
-            { header: 'vary', value: 'accept', override: true },
+            { header: 'x-aws-image-optimization', value: 'v1.0', override: true }
           ],
         }
       });
-      imageDeliveryCacheBehaviorConfig.responseHeadersPolicy = imageResponseHeadersPolicy;
-    }
-    const imageDelivery = new cloudfront.Distribution(this, 'imageDeliveryDistribution', {
-      comment: 'image optimization - image delivery',
-      defaultBehavior: imageDeliveryCacheBehaviorConfig
-    });
 
-    new CfnOutput(this, 'ImageDeliveryDomain', {
-      description: 'Domain name of image delivery',
-      value: imageDelivery.distributionDomainName
-    });
+      //创建 CloudFront 分配
+      const imageDelivery = new cloudfront.Distribution(this, 'imageDeliveryDistribution', {
+        comment: `image optimization - ${originImageBucket.bucketName}`,
+        defaultBehavior: imageDeliveryCacheBehaviorConfig
+      });
+      new CfnOutput(this, 'imageDeliveryDistributionCfn', {
+        description: 'Domain name of image delivery',
+        value: imageDelivery.distributionDomainName
+      });
+    }
   }
 }
