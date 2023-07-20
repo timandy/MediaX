@@ -88,6 +88,7 @@ function resolveOptions(request) {
                 break;
         }
     }
+    return options;
 }
 
 // 根据 accept 请求头自动判断格式
