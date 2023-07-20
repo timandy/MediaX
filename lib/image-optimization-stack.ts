@@ -1,7 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 
-import { aws_cloudfront as cloudfront, aws_cloudfront_origins as origins, aws_iam as iam, aws_lambda as lambda, aws_logs as logs, aws_s3 as s3, CfnOutput, Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
+import { Aws, aws_cloudfront as cloudfront, aws_cloudfront_origins as origins, aws_iam as iam, aws_lambda as lambda, aws_logs as logs, aws_s3 as s3, CfnOutput, Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { MyCustomResource } from './my-custom-resource';
 import { createHash } from 'crypto';
@@ -119,7 +119,7 @@ export class ImageOptimizationStack extends Stack {
       lambdaEnv.cacheBucketName = cacheImageBucket.bucketName;
 
     // 创建用于图像处理的 Lambda
-    const lambdaProps = {
+    const imageProcessing = new lambda.Function(this, 'imageOptimization', {
       functionName: `ImageOptimization_${id}`,
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'index.handler',
@@ -128,8 +128,8 @@ export class ImageOptimizationStack extends Stack {
       memorySize: parseInt(LAMBDA_MEMORY),
       environment: lambdaEnv,
       logRetention: logs.RetentionDays.ONE_DAY,
-    };
-    const imageProcessing = new lambda.Function(this, 'imageOptimization', lambdaProps);
+      layers: [lambda.LayerVersion.fromLayerVersionArn(this, 'ffmpegLayer', `arn:aws:lambda:${Aws.REGION}:${Aws.ACCOUNT_ID}:layer:ffmpeg-node-layer:1`)]
+    });
     imageProcessing.role?.attachInlinePolicy(
       new iam.Policy(this, 'imageIamPolicy', {
         policyName: `ImageIamPolicy_${id}`,
