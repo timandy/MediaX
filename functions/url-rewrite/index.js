@@ -31,7 +31,7 @@ function handler(event) {
 function resolveOptions(request) {
     var querystring = request.querystring;
     if (!querystring) {
-        return {}
+        return {};
     }
 
     var options = {};
@@ -45,7 +45,7 @@ function resolveOptions(request) {
         // 无效 optionValue
         var optionValue = querystring[optionKey].value;
         if (!optionValue) {
-            continue
+            continue;
         }
         optionKey = optionKey.toLowerCase();
         optionValue = optionValue.toLowerCase();
@@ -102,7 +102,7 @@ function getFormatByAccept(acceptHeader) {
         return undefined;
     }
     // header 值小写
-    accept = accept.toLowerCase()
+    accept = accept.toLowerCase();
     // 查找格式
     for (var i = 0; i < SUPPORTED_FORMATS.length; i++) {
         var format = SUPPORTED_FORMATS[i];

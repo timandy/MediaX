@@ -21,8 +21,8 @@ const ImageFormat = {
     TIF: {Name: 'tif', Format: 'tiff', ContentType: 'image/tiff', SupportQuality: true},
     TIFF: {Name: 'tiff', Format: 'tiff', ContentType: 'image/tiff', SupportQuality: true},
     AVIF: {Name: 'avif', Format: 'avif', ContentType: 'image/avif', SupportQuality: true},
-    SVG: {Name: 'svg', Format: 'svg', ContentType: 'image/svg+xml', SupportQuality: false},
-}
+    SVG: {Name: 'svg', Format: 'svg', ContentType: 'image/svg+xml', SupportQuality: false}
+};
 
 exports.handler = async (event) => {
     // 验证密码
@@ -37,7 +37,7 @@ exports.handler = async (event) => {
     }
     // 取出请求路径, 例如 /images/rio/1.jpeg/format=auto,width=100 或 /images/rio/1.jpeg/original 的原始路径为 /images/rio/1.jpeg
     const requestPath = requestContext.http.path;
-    console.log(`==> GET ${requestPath}`)
+    console.log(`==> GET ${requestPath}`);
     const imagePathArray = requestPath.split('/');
     // 最后一个元素出栈 format=auto,width=100 或 original
     const operationsPrefix = imagePathArray.pop();
@@ -55,11 +55,11 @@ exports.handler = async (event) => {
     } catch (error) {
         return newError('Could not download origin file from S3', error);
     } finally {
-        startTime = printTiming('Download origin file', startTime)
+        startTime = printTiming('Download origin file', startTime);
     }
     const originContentType = originFileObj.ContentType;
     const originMetadata = originFileObj.Metadata;
-    const originMetadataWithPrefix = addAmzMetaPrefix(originMetadata)
+    const originMetadataWithPrefix = addAmzMetaPrefix(originMetadata);
 
     //不是图片, 上传源文件返回
     if (operationsPrefix === 'original' || !isImage(originContentType)) {
@@ -69,7 +69,7 @@ exports.handler = async (event) => {
         } catch (error) {
             return newError('Could not upload origin file to S3', error);
         } finally {
-            startTime = printTiming('Upload origin file', startTime)
+            startTime = printTiming('Upload origin file', startTime);
         }
         // 返回响应
         return {
@@ -77,25 +77,25 @@ exports.handler = async (event) => {
             headers: mergeObjects(originMetadataWithPrefix, {'Content-Type': originContentType}),
             isBase64Encoded: true,
             body: originFileObj.Body.toString('base64')
-        }
+        };
     }
 
     // 解析转换参数
     const operations = {};
     const operationsArray = operationsPrefix.split(',');
     operationsArray.forEach(operation => {
-        const operationKV = operation.split("=");
+        const operationKV = operation.split('=');
         operations[operationKV[0]] = operationKV[1];
     });
 
     // 执行转换
     let transformedImageInfo;
     try {
-        transformedImageInfo = await transImage(originFileObj, operations)
+        transformedImageInfo = await transImage(originFileObj, operations);
     } catch (error) {
         return newError('Transforming image failed', error);
     } finally {
-        startTime = printTiming('Transform image', startTime)
+        startTime = printTiming('Transform image', startTime);
     }
 
     // 上传转换后的图片
@@ -104,7 +104,7 @@ exports.handler = async (event) => {
     } catch (error) {
         return newError('Could not upload transformed image to S3', error);
     } finally {
-        printTiming('Upload transformed image', startTime)
+        printTiming('Upload transformed image', startTime);
     }
 
     // 返回转换后的图
@@ -113,7 +113,7 @@ exports.handler = async (event) => {
         headers: mergeObjects(originMetadataWithPrefix, {'Content-Type': transformedImageInfo.ContentType, 'Cache-Control': TRANSFORMED_IMAGE_CACHE_TTL}),
         isBase64Encoded: true,
         body: transformedImageInfo.Buff.toString('base64')
-    }
+    };
 };
 
 // 从源桶下载文件
@@ -129,7 +129,7 @@ async function uploadFile(body, filePath, contentType, metadata) {
             Bucket: S3_TRANSFORMED_IMAGE_BUCKET,
             Key: filePath,
             ContentType: contentType,
-            Metadata: metadata,
+            Metadata: metadata
         }).promise();
     }
 }
@@ -161,7 +161,7 @@ async function transImage(imageFile, operations) {
         return {
             Buff: await transformedImage.toBuffer(),
             ContentType: imageFile.ContentType
-        }
+        };
     }
 
     // 有损
@@ -171,14 +171,14 @@ async function transImage(imageFile, operations) {
         return {
             Buff: await transformedImage.toFormat(imgFormat.Format, {quality: parseInt(quality)}).toBuffer(),
             ContentType: imgFormat.ContentType
-        }
+        };
     }
 
     // 无损
     return {
         Buff: await transformedImage.toFormat(imgFormat.Format).toBuffer(),
         ContentType: imgFormat.ContentType
-    }
+    };
 }
 
 // 是否图片
@@ -216,7 +216,7 @@ function addAmzMetaPrefix(obj) {
     if (!obj) {
         return {};
     }
-    const result = {}
+    const result = {};
     for (let key of Object.keys(obj)) {
         result[`x-amz-meta-${key}`] = obj[key];
     }
@@ -238,6 +238,6 @@ function newError(message, error) {
     console.log(error);
     return {
         statusCode: 500,
-        body: message,
-    }
+        body: message
+    };
 }
