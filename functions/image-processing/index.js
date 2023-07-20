@@ -146,7 +146,7 @@ async function transImage(imageFile, operations) {
     if (operations['height']) {
         resizeOptions.height = parseInt(operations['height']);
     }
-    if (resizeOptions) {
+    if (isNotEmpty(resizeOptions)) {
         transformedImage = transformedImage.resize(resizeOptions);
     }
 
@@ -240,4 +240,14 @@ function newError(message, error) {
         statusCode: 500,
         body: message
     };
+}
+
+// 是否空
+function isEmpty(obj) {
+    return !obj || (Array.isArray(obj) && obj.length === 0) || (typeof obj === 'object' && Object.keys(obj).length === 0);
+}
+
+// 是否非空
+function isNotEmpty(obj) {
+    return !isEmpty(obj);
 }

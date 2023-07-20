@@ -9,7 +9,7 @@ function handler(event) {
     // 验证、处理和规范化查询参数中的请求操作
     var options = resolveOptions(request);
     // 如果找到有效操作，则重写规范化版本的路径
-    if (options) {
+    if (isNotEmpty(options)) {
         // 按顺序重新组合
         var optionArray = [];
         if (options.format) optionArray.push('format=' + options.format);
@@ -123,4 +123,14 @@ function getOptionValue(optionValue, maxValue) {
         return value.toString();
     }
     return undefined;
+}
+
+// 是否空
+function isEmpty(obj) {
+    return !obj || (Array.isArray(obj) && obj.length === 0) || (typeof obj === 'object' && Object.keys(obj).length === 0);
+}
+
+// 是否非空
+function isNotEmpty(obj) {
+    return !isEmpty(obj);
 }
