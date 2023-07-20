@@ -12,6 +12,18 @@ const TRANSFORMED_IMAGE_CACHE_TTL = process.env.cacheTTL;
 const SECRET_KEY = process.env.secretKey;
 const LOG_TIMING = process.env.logTiming;
 
+const ImageFormat = {
+    JPG: {Name: 'jpg', Format: 'jpeg', ContentType: 'image/jpeg', SupportQuality: true},
+    JPEG: {Name: 'jpeg', Format: 'jpeg', ContentType: 'image/jpeg', SupportQuality: true},
+    PNG: {Name: 'png', Format: 'png', ContentType: 'image/png', SupportQuality: false},
+    WEBP: {Name: 'webp', Format: 'webp', ContentType: 'image/webp', SupportQuality: true},
+    GIF: {Name: 'gif', Format: 'gif', ContentType: 'image/gif', SupportQuality: false},
+    TIF: {Name: 'tif', Format: 'tiff', ContentType: 'image/tiff', SupportQuality: true},
+    TIFF: {Name: 'tiff', Format: 'tiff', ContentType: 'image/tiff', SupportQuality: true},
+    AVIF: {Name: 'avif', Format: 'avif', ContentType: 'image/avif', SupportQuality: true},
+    SVG: {Name: 'svg', Format: 'svg', ContentType: 'image/svg+xml', SupportQuality: false},
+}
+
 exports.handler = async (event) => {
     // 验证密码
     if (!event.headers['x-origin-secret-header'] || !(event.headers['x-origin-secret-header'] === SECRET_KEY)) {
@@ -118,11 +130,6 @@ async function uploadFile(body, filePath, contentType, metadata) {
     }
 }
 
-// 是否图片
-function isImage(contentType) {
-    return contentType && contentType.toString().toLowerCase().startsWith('image');
-}
-
 // 处理图片
 async function transImage(imageFile, operations) {
     let transformedImage = Sharp(imageFile.Body, {failOn: 'none'});
@@ -148,52 +155,42 @@ async function transImage(imageFile, operations) {
     const preferFormat = operations['format'];
     if (!preferFormat) {
         return {
-            Buff: await transformedImage.toBuffer(), ContentType: imageFile.ContentType
+            Buff: await transformedImage.toBuffer(),
+            ContentType: imageFile.ContentType
         }
     }
 
-    // 转格式
-    let isLossy = false;
-    let targetFormat;
-    switch (preferFormat) {
-        case 'jpeg':
-            targetFormat = 'image/jpeg';
-            isLossy = true;
-            break;
-        case 'svg':
-            targetFormat = 'image/svg+xml';
-            break;
-        case 'gif':
-            targetFormat = 'image/gif';
-            break;
-        case 'webp':
-            targetFormat = 'image/webp';
-            isLossy = true;
-            break;
-        case 'png':
-            targetFormat = 'image/png';
-            break;
-        case 'avif':
-            targetFormat = 'image/avif';
-            isLossy = true;
-            break;
-        default:
-            targetFormat = 'image/jpeg';
-            isLossy = true;
-    }
-
-    // 质量损失
-    let quality = operations['quality'];
-    if (isLossy && quality) {
+    // 有损
+    const imgFormat = getFormat(preferFormat);
+    const quality = operations['quality'];
+    if (imgFormat.SupportQuality && quality) {
         return {
-            Buff: await transformedImage.toFormat(targetFormat, {quality: parseInt(quality)}).toBuffer(), ContentType: targetFormat
+            Buff: await transformedImage.toFormat(imgFormat.Format, {quality: parseInt(quality)}).toBuffer(),
+            ContentType: imgFormat.ContentType
         }
     }
 
     // 无损
     return {
-        Buff: await transformedImage.toFormat(targetFormat).toBuffer(), ContentType: targetFormat
+        Buff: await transformedImage.toFormat(imgFormat.Format).toBuffer(),
+        ContentType: imgFormat.ContentType
     }
+}
+
+// 是否图片
+function isImage(contentType) {
+    return contentType && contentType.toString().toLowerCase().startsWith('image');
+}
+
+// 根据格式名获取格式描述
+function getFormat(format) {
+    for (let key in ImageFormat) {
+        const value = ImageFormat[key];
+        if (value.Name === format) {
+            return value;
+        }
+    }
+    return ImageFormat.JPEG;
 }
 
 function mergeObjects(...objs) {
