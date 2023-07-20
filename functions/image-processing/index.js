@@ -224,8 +224,9 @@ function addAmzMetaPrefix(obj) {
 function printTiming(step, start) {
     if (LOG_TIMING === 'true') {
         console.log(`${step} took ${parseInt(performance.now() - start).toString()}ms`);
+        return performance.now();
     }
-    return performance.now();
+    return 0;
 }
 
 // 打印错误
