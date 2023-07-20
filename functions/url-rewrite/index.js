@@ -41,7 +41,7 @@ function resolveOptions(request) {
             continue;
         }
         // 无效 optionValue
-        let optionValue = querystring[optionKey].value;
+        var optionValue = querystring[optionKey].value;
         if (!optionValue) {
             continue
         }
@@ -95,7 +95,7 @@ function getFormatByAccept(acceptHeader) {
         return undefined;
     }
     // header 值不存在
-    let accept = acceptHeader.value;
+    var accept = acceptHeader.value;
     if (!accept) {
         return undefined;
     }
@@ -112,7 +112,7 @@ function getFormatByAccept(acceptHeader) {
 
 // 将值转换为数字, 验证大小后, 返回字符串格式
 function getOptionValue(optionValue, maxValue) {
-    let value = parseInt(optionValue);
+    var value = parseInt(optionValue);
     if (!isNaN(value) && (value > 0)) {
         // you can protect the Lambda function by setting a max value;
         if (value > maxValue) value = maxValue;
