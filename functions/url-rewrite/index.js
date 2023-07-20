@@ -1,17 +1,17 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 
-const SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'tif', 'tiff', 'avif', 'svg'];
+var SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'tif', 'tiff', 'avif', 'svg'];
 
 function handler(event) {
-    const request = event.request;
-    const originalImagePath = request.uri;
+    var request = event.request;
+    var originalImagePath = request.uri;
     // 验证、处理和规范化查询参数中的请求操作
-    const options = resolveOptions(request);
+    var options = resolveOptions(request);
     // 如果找到有效操作，则重写规范化版本的路径
     if (options) {
         // 按顺序重新组合
-        const optionArray = [];
+        var optionArray = [];
         if (options.format) optionArray.push('format=' + options.format);
         if (options.quality) optionArray.push('quality=' + options.quality);
         if (options.width) optionArray.push('width=' + options.width);
@@ -29,12 +29,12 @@ function handler(event) {
 
 // 解析参数
 function resolveOptions(request) {
-    const querystring = request.querystring;
+    var querystring = request.querystring;
     if (!querystring) {
         return {}
     }
 
-    const options = {};
+    var options = {};
     for (let optionKey of Object.keys(querystring)) {
         // 无效 optionKey
         if (!optionKey) {
@@ -50,7 +50,7 @@ function resolveOptions(request) {
         switch (optionKey) {
             case 'format':
                 if (optionValue === 'auto') {
-                    const format = getFormatByAccept(request.headers.accept);
+                    var format = getFormatByAccept(request.headers.accept);
                     if (format) {
                         options['format'] = format;
                     }
@@ -62,21 +62,21 @@ function resolveOptions(request) {
                 break;
 
             case 'width':
-                const width = getOptionValue(optionValue, 4000);
+                var width = getOptionValue(optionValue, 4000);
                 if (width) {
                     options['width'] = width;
                 }
                 break;
 
             case 'height':
-                const height = getOptionValue(optionValue, 4000);
+                var height = getOptionValue(optionValue, 4000);
                 if (height) {
                     options['height'] = height;
                 }
                 break;
 
             case 'quality':
-                const quality = getOptionValue(optionValue, 100);
+                var quality = getOptionValue(optionValue, 100);
                 if (quality) {
                     options['quality'] = quality;
                 }
