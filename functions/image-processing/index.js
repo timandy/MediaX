@@ -26,15 +26,19 @@ const ImageFormat = {
 
 exports.handler = async (event) => {
     // 验证密码
-    if (!event.headers['x-origin-secret-header'] || !(event.headers['x-origin-secret-header'] === SECRET_KEY)) {
+    const secret = event.headers['x-origin-secret-header'];
+    if (!secret || !(secret === SECRET_KEY)) {
         return newError('Request unauthorized', event);
     }
     // 判断请求方法
-    if (!event.requestContext || !event.requestContext.http || !(event.requestContext.http.method === 'GET')) {
+    const requestContext = event.requestContext;
+    if (!requestContext || !requestContext.http || !(requestContext.http.method === 'GET')) {
         return newError('Only GET method is supported', event);
     }
     // 取出请求路径, 例如 /images/rio/1.jpeg/format=auto,width=100 或 /images/rio/1.jpeg/original 的原始路径为 /images/rio/1.jpeg
-    const imagePathArray = event.requestContext.http.path.split('/');
+    const requestPath = requestContext.http.path;
+    console.log(`==> GET ${requestPath}`)
+    const imagePathArray = requestPath.split('/');
     // 最后一个元素出栈 format=auto,width=100 或 original
     const operationsPrefix = imagePathArray.pop();
     // 获取原始路径 images/rio/1.jpg
