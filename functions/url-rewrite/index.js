@@ -35,8 +35,10 @@ function resolveOptions(request) {
     }
 
     var options = {};
-    for (let optionKey of Object.keys(querystring)) {
+    var queryKeys = Object.keys(querystring);
+    for (var i = 0; i < queryKeys.length; i++) {
         // 无效 optionKey
+        var optionKey = queryKeys[i];
         if (!optionKey) {
             continue;
         }
@@ -102,7 +104,8 @@ function getFormatByAccept(acceptHeader) {
     // header 值小写
     accept = accept.toLowerCase()
     // 查找格式
-    for (let format of SUPPORTED_FORMATS) {
+    for (var i = 0; i < SUPPORTED_FORMATS.length; i++) {
+        var format = SUPPORTED_FORMATS[i];
         if (accept.includes(format)) {
             return format;
         }
