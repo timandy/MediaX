@@ -44,8 +44,6 @@ exports.handler = async (event) => {
     const originContentType = originFileObj.ContentType;
     const originMetadata = originFileObj.Metadata;
     const originMetadataWithPrefix = addAmzMetaPrefix(originMetadata)
-    console.log("metadata", originMetadata);
-    console.log("originMetadataWithPrefix", originMetadataWithPrefix);
 
     //不是图片, 上传源文件返回
     if (operationsPrefix === 'original' || !isImage(originContentType)) {
