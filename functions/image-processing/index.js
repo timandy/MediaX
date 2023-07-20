@@ -198,25 +198,27 @@ function getFormat(format) {
 }
 
 function mergeObjects(...objs) {
-    const mergedObject = {};
-    objs.forEach(obj => {
-        if (obj !== null) {
-            Object.assign(mergedObject, obj);
+    if (!objs) {
+        return {};
+    }
+    const result = {};
+    for (let obj of objs) {
+        if (!obj) {
+            continue;
         }
-    });
-    return mergedObject;
+        Object.assign(result, obj);
+    }
+    return result;
 }
 
 // 对 s3 元数据添加前缀
 function addAmzMetaPrefix(obj) {
-    const result = {}
     if (!obj) {
-        return result;
+        return {};
     }
-    for (let key in obj) {
-        if (obj.hasOwnProperty(key)) {  // 确保只处理对象自身的属性
-            result['x-amz-meta-' + key] = obj[key];
-        }
+    const result = {}
+    for (let key of Object.keys(obj)) {
+        result[`x-amz-meta-${key}`] = obj[key];
     }
     return result;
 }
