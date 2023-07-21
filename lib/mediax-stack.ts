@@ -3,7 +3,7 @@
 
 import { Aws, aws_cloudfront as cloudfront, aws_cloudfront_origins as origins, aws_iam as iam, aws_lambda as lambda, aws_logs as logs, aws_s3 as s3, CfnOutput, Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { MyCustomResource } from './my-custom-resource';
+import { MediaxResource } from './mediax-resource';
 import { createHash } from 'crypto';
 
 // Region to Origin Shield mapping based on latency. to be updated when new Regional Edge Caches are added to CloudFront.
@@ -47,7 +47,7 @@ type LambdaEnv = {
   logTiming: string,
 }
 
-export class ImageOptimizationStack extends Stack {
+export class MediaxStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -123,7 +123,7 @@ export class ImageOptimizationStack extends Stack {
       functionName: `ImageOptimization_${id}`,
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'index.handler',
-      code: lambda.Code.fromAsset('functions/image-processing'),
+      code: lambda.Code.fromAsset('functions/mediax-process'),
       timeout: Duration.seconds(parseInt(LAMBDA_TIMEOUT)),
       memorySize: parseInt(LAMBDA_MEMORY),
       environment: lambdaEnv,
@@ -143,7 +143,7 @@ export class ImageOptimizationStack extends Stack {
     });
 
     // 利用自定义资源获取 Lambda URL 的主机名
-    const imageProcessingHelper = new MyCustomResource(this, 'customResource', {
+    const imageProcessingHelper = new MediaxResource(this, 'customResource', {
       AppId: id,
       Url: imageProcessingURL.url
     });
@@ -176,7 +176,7 @@ export class ImageOptimizationStack extends Stack {
     // 创建用于 url 重写的 CloudFront 函数
     const urlRewriteFunction = new cloudfront.Function(this, 'imageUrlRewriteFunction', {
       functionName: `ImageUrlRewriteFunction_${id}`,
-      code: cloudfront.FunctionCode.fromFile({ filePath: 'functions/url-rewrite/index.js', }),
+      code: cloudfront.FunctionCode.fromFile({ filePath: 'functions/mediax-urlrewrite/index.js', }),
     });
 
     // 创建 CloudFront 缓存策略

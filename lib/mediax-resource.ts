@@ -12,7 +12,7 @@ export interface MyCustomResourceProps {
   Url: string;
 }
 
-export class MyCustomResource extends Construct {
+export class MediaxResource extends Construct {
   public readonly hostname: string;
 
   constructor(scope: Construct, id: string, props: MyCustomResourceProps) {
@@ -20,7 +20,7 @@ export class MyCustomResource extends Construct {
 
     const onEvent = new lambda.SingletonFunction(this, 'Singleton', {
       uuid: props.AppId,
-      code: lambda.Code.fromAsset('functions/custom-resource'),
+      code: lambda.Code.fromAsset('functions/mediax-resource'),
       handler: 'index.on_event',
       timeout: cdk.Duration.seconds(300),
       runtime: lambda.Runtime.PYTHON_3_9,
