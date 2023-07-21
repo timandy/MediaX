@@ -42,14 +42,14 @@ const ImageFormat = {
 };
 
 const AudioFormat = {
-    MP3: {Name: 'mp3', Type: MediaType.AUDIO, Format: 'mp3', ContentType: 'audio/mpeg', SupportBitrate: true},
-    AAC: {Name: 'aac', Type: MediaType.AUDIO, Format: 'aac', ContentType: 'audio/aac', SupportBitrate: true},
-    AC3: {Name: 'ac3', Type: MediaType.AUDIO, Format: 'ac3', ContentType: 'audio/ac3', SupportBitrate: true},
-    FLAC: {Name: 'flac', Type: MediaType.AUDIO, Format: 'flac', ContentType: 'audio/flac', SupportBitrate: false},
-    ALAC: {Name: 'alac', Type: MediaType.AUDIO, Format: 'alac', ContentType: 'audio/alac', SupportBitrate: false},
-    WAV: {Name: 'wav', Type: MediaType.AUDIO, Format: 'wav', ContentType: 'audio/wav', SupportBitrate: false},
-    MID: {Name: 'mid', Type: MediaType.AUDIO, Format: 'midi', ContentType: 'audio/midi', SupportBitrate: false},
-    MIDI: {Name: 'midi', Type: MediaType.AUDIO, Format: 'midi', ContentType: 'audio/midi', SupportBitrate: false}
+    MP3: {Name: 'mp3', Type: MediaType.AUDIO, Codec: 'libmp3lame', Format: 'mp3', ContentType: 'audio/mpeg', SupportBitrate: true},
+    AAC: {Name: 'aac', Type: MediaType.AUDIO, Codec: 'aac', Format: 'aac', ContentType: 'audio/aac', SupportBitrate: true},
+    AC3: {Name: 'ac3', Type: MediaType.AUDIO, Codec: 'ac3', Format: 'ac3', ContentType: 'audio/ac3', SupportBitrate: true},
+    FLAC: {Name: 'flac', Type: MediaType.AUDIO, Codec: 'flac', Format: 'flac', ContentType: 'audio/flac', SupportBitrate: false},
+    ALAC: {Name: 'alac', Type: MediaType.AUDIO, Codec: 'alac', Format: 'alac', ContentType: 'audio/alac', SupportBitrate: false},
+    WAV: {Name: 'wav', Type: MediaType.AUDIO, Codec: 'pcm_s16le', Format: 'wav', ContentType: 'audio/wav', SupportBitrate: false},
+    MID: {Name: 'mid', Type: MediaType.AUDIO, Codec: 'midi', Format: 'midi', ContentType: 'audio/midi', SupportBitrate: false},
+    MIDI: {Name: 'midi', Type: MediaType.AUDIO, Codec: 'midi', Format: 'midi', ContentType: 'audio/midi', SupportBitrate: false}
 };
 
 exports.handler = async (event) => {
@@ -231,7 +231,7 @@ async function transAudio(audioFile, options, audioFileKey) {
         const ffmpegCmd = ffmpeg(inputFilePath);
         //指定了目标格式
         if (audioFormat) {
-            ffmpegCmd.audioCodec(audioFormat.Format);
+            ffmpegCmd.audioCodec(audioFormat.Codec);
         }
         //计算目标码率
         const bitrate = computeBitrate(options[OptionKey.BITRATE], audioFormat, inputExt);
