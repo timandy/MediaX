@@ -18,7 +18,6 @@ export class MyCustomResource extends Construct {
   constructor(scope: Construct, id: string, props: MyCustomResourceProps) {
     super(scope, id);
 
-
     const onEvent = new lambda.SingletonFunction(this, 'Singleton', {
       uuid: props.AppId,
       code: lambda.Code.fromAsset('functions/custom-resource'),
