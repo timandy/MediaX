@@ -103,7 +103,7 @@ exports.handler = async (event) => {
         // 返回响应
         return {
             statusCode: 200,
-            headers: mergeObjects(originMetadataWithPrefix, {'Content-Type': originContentType}),
+            headers: mergeObjects(originMetadataWithPrefix, {'Content-Type': originContentType, 'Cache-Control': TRANSFORMED_FILE_CACHE_TTL}),
             isBase64Encoded: true,
             body: originFileObj.Body.toString('base64')
         };
@@ -133,7 +133,7 @@ exports.handler = async (event) => {
 
     // 上传转换后的文件
     try {
-        await uploadFile(transformedResult.Buff, cacheKey, transformedResult.ContentType, mergeObjects(originMetadata, {'Cache-Control': TRANSFORMED_FILE_CACHE_TTL}));
+        await uploadFile(transformedResult.Buff, cacheKey, transformedResult.ContentType, originMetadata);
     } catch (error) {
         return newError('Could not upload transformed file to S3', error);
     } finally {
@@ -162,6 +162,7 @@ async function uploadFile(body, filePath, contentType, metadata) {
             Bucket: S3_TRANSFORMED_FILE_BUCKET,
             Key: filePath,
             ContentType: contentType,
+            CacheControl: TRANSFORMED_FILE_CACHE_TTL,
             Metadata: metadata
         }).promise();
     }
