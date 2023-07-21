@@ -241,8 +241,11 @@ async function transAudio(audioFile, options, audioFileKey) {
         }
         //异步转换
         ffmpegCmd.save(outputFilePath)
+            .on('start', (commandLine) => {
+                console.log(`The audio conversion started: ${commandLine}`);
+            })
             .on('end', () => {
-                console.log('The conversion to aac completed successfully');
+                console.log('The audio conversion completed successfully');
                 resolve();
             })
             .on('error', (error) => {
