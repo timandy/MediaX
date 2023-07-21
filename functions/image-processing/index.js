@@ -5,6 +5,7 @@ const AWS = require('aws-sdk');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const querystring = require('querystring');
 const {v4: uuidv4} = require('uuid');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
@@ -111,7 +112,8 @@ exports.handler = async (event) => {
 
     // 执行转换
     let transformedResult;
-    if (isImage(originContentType, options)) {
+    const shouldTransImage = isImage(originContentType, options);
+    if (shouldTransImage) {
         // 转换图片
         try {
             transformedResult = await transImage(originFileObj, options);
@@ -141,12 +143,21 @@ exports.handler = async (event) => {
     }
 
     // 返回转换后的文件
-    return {
-        statusCode: 200,
-        headers: mergeObjects(originMetadataWithPrefix, {'Content-Type': transformedResult.ContentType, 'Cache-Control': TRANSFORMED_FILE_CACHE_TTL}),
-        isBase64Encoded: true,
-        body: transformedResult.Buff.toString('base64')
-    };
+    if (shouldTransImage) {
+        //图片直接 base64 编码返回
+        return {
+            statusCode: 200,
+            headers: mergeObjects(originMetadataWithPrefix, {'Content-Type': transformedResult.ContentType, 'Cache-Control': TRANSFORMED_FILE_CACHE_TTL}),
+            isBase64Encoded: true,
+            body: transformedResult.Buff.toString('base64')
+        };
+    } else {
+        //音频太大返回重定向, 让客户端重新请求一次, 从而回源到 S3. Lambda 限制响应最大 6MB
+        return {
+            statusCode: 302,
+            headers: {'Location': `/${originFilePath}?${querystring.stringify(options)}`, 'Cache-Control': 'no-cache'}
+        };
+    }
 };
 
 // 从源桶下载文件
@@ -183,12 +194,10 @@ async function transImage(imageFile, options) {
     if (isNotEmpty(resizeOptions)) {
         outputImage = outputImage.resize(resizeOptions);
     }
-
     // 旋转
     if (metadata.orientation) {
         outputImage = outputImage.rotate();
     }
-
     // 不需要转格式, 直接返回
     const imageFormat = resolveImageFormat(options[OptionKey.FORMAT]);
     if (!imageFormat) {
@@ -197,7 +206,6 @@ async function transImage(imageFile, options) {
             ContentType: imageFile.ContentType
         };
     }
-
     // 有损
     const quality = options[OptionKey.QUALITY];
     if (imageFormat.SupportQuality && quality) {
@@ -206,7 +214,6 @@ async function transImage(imageFile, options) {
             ContentType: imageFormat.ContentType
         };
     }
-
     // 无损
     return {
         Buff: await outputImage.toFormat(imageFormat.Format).toBuffer(),
