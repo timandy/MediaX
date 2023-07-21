@@ -3,6 +3,14 @@
 
 var SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'tif', 'tiff', 'avif', 'svg'];
 
+var OptionKey = {
+    FORMAT: 'format',
+    QUALITY: 'quality',
+    WIDTH: 'width',
+    HEIGHT: 'height',
+    BITRATE: 'bitrate'
+};
+
 function handler(event) {
     var request = event.request;
     var originalImagePath = request.uri;
@@ -12,14 +20,25 @@ function handler(event) {
     if (isNotEmpty(options)) {
         // 按顺序重新组合
         var optionArray = [];
-        if (options.format) optionArray.push('format=' + options.format);
-        if (options.quality) optionArray.push('quality=' + options.quality);
-        if (options.width) optionArray.push('width=' + options.width);
-        if (options.height) optionArray.push('height=' + options.height);
-        request.uri = originalImagePath + '/' + optionArray.join(',');
+        if (options.format) {
+            optionArray.push(`${OptionKey.FORMAT}=${options.format}`);
+        }
+        if (options.quality) {
+            optionArray.push(`${OptionKey.QUALITY}=${options.quality}`);
+        }
+        if (options.width) {
+            optionArray.push(`${OptionKey.WIDTH}=${options.width}`);
+        }
+        if (options.height) {
+            optionArray.push(`${OptionKey.HEIGHT}=${options.height}`);
+        }
+        if (options.bitrate) {
+            optionArray.push(`${OptionKey.BITRATE}=${options.bitrate}`);
+        }
+        request.uri = `${originalImagePath}/${optionArray.join(',')}`;
     } else {
         // 如果未找到有效参数，则使用 /original 路径后缀标记请求
-        request.uri = originalImagePath + '/original';
+        request.uri = `${originalImagePath}/original`;
     }
 
     // 移除 ? 后的参数
@@ -50,37 +69,44 @@ function resolveOptions(request) {
         optionKey = optionKey.toLowerCase();
         optionValue = optionValue.toLowerCase();
         switch (optionKey) {
-            case 'format':
+            case OptionKey.FORMAT:
                 if (optionValue === 'auto') {
                     var format = getFormatByAccept(request.headers.accept);
                     if (format) {
-                        options['format'] = format;
+                        options[OptionKey.FORMAT] = format;
                     }
                     break;
                 }
                 if (SUPPORTED_FORMATS.includes(optionValue)) {
-                    options['format'] = optionValue;
+                    options[OptionKey.FORMAT] = optionValue;
                 }
                 break;
 
-            case 'width':
+            case OptionKey.WIDTH:
                 var width = getOptionValue(optionValue, 4000);
                 if (width) {
-                    options['width'] = width;
+                    options[OptionKey.WIDTH] = width;
                 }
                 break;
 
-            case 'height':
+            case OptionKey.HEIGHT:
                 var height = getOptionValue(optionValue, 4000);
                 if (height) {
-                    options['height'] = height;
+                    options[OptionKey.HEIGHT] = height;
                 }
                 break;
 
-            case 'quality':
+            case OptionKey.QUALITY:
                 var quality = getOptionValue(optionValue, 100);
                 if (quality) {
-                    options['quality'] = quality;
+                    options[OptionKey.QUALITY] = quality;
+                }
+                break;
+
+            case OptionKey.BITRATE:
+                var bitrate = optionValue;
+                if (bitrate) {
+                    options[OptionKey.BITRATE] = bitrate;
                 }
                 break;
 
