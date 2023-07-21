@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT-0
 
 var SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'tif', 'tiff', 'avif', 'svg',
-    'mp3', 'aac', 'ac3', 'flac', 'alac', 'wav', 'mid', 'midi'];
+    'mp3', 'aac', 'ac3', 'flac', 'm4a', 'wav'];
 
 var OptionKey = {
     FORMAT: 'format',

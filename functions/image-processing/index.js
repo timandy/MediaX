@@ -45,12 +45,10 @@ const ImageFormat = {
 const AudioFormat = {
     MP3: {Name: 'mp3', Type: MediaType.AUDIO, Codec: 'libmp3lame', Format: 'mp3', ContentType: 'audio/mpeg', SupportBitrate: true},
     AAC: {Name: 'aac', Type: MediaType.AUDIO, Codec: 'aac', Format: 'aac', ContentType: 'audio/aac', SupportBitrate: true},
-    AC3: {Name: 'ac3', Type: MediaType.AUDIO, Codec: 'ac3', Format: 'ac3', ContentType: 'audio/ac3', SupportBitrate: true},
+    AC3: {Name: 'ac3', Type: MediaType.AUDIO, Codec: 'ac3', Format: 'ac3', ContentType: 'audio/ac3', SupportBitrate: true},//码率最低 64k
     FLAC: {Name: 'flac', Type: MediaType.AUDIO, Codec: 'flac', Format: 'flac', ContentType: 'audio/flac', SupportBitrate: false},
-    ALAC: {Name: 'alac', Type: MediaType.AUDIO, Codec: 'alac', Format: 'alac', ContentType: 'audio/alac', SupportBitrate: false},
-    WAV: {Name: 'wav', Type: MediaType.AUDIO, Codec: 'pcm_s16le', Format: 'wav', ContentType: 'audio/wav', SupportBitrate: false},
-    MID: {Name: 'mid', Type: MediaType.AUDIO, Codec: 'midi', Format: 'midi', ContentType: 'audio/midi', SupportBitrate: false},
-    MIDI: {Name: 'midi', Type: MediaType.AUDIO, Codec: 'midi', Format: 'midi', ContentType: 'audio/midi', SupportBitrate: false}
+    ALAC: {Name: 'm4a', Type: MediaType.AUDIO, Codec: 'alac', Format: 'm4a', ContentType: 'audio/mp4a-latm', SupportBitrate: false},
+    WAV: {Name: 'wav', Type: MediaType.AUDIO, Codec: 'pcm_s16le', Format: 'wav', ContentType: 'audio/wav', SupportBitrate: false}
 };
 
 exports.handler = async (event) => {
