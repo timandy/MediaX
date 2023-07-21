@@ -99,6 +99,7 @@ exports.handler = async (event) => {
         } catch (error) {
             return newError('Could not upload origin file to S3', error);
         } finally {
+            // noinspection JSUnusedAssignment
             startTime = printTiming('Upload origin file', startTime);
         }
         // 返回响应
