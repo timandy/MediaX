@@ -1,8 +1,8 @@
 {
-  "name": "image-optimization",
+  "name": "mediax",
   "version": "0.1.0",
   "bin": {
-    "image-optimization": "bin/image-optimization.js"
+    "mediax": "bin/mediax.js"
   },
   "scripts": {
     "prebuild": "npm install uuid sharp fluent-ffmpeg --prefix functions/mediax-process/ --platform=linux --arch=x64",

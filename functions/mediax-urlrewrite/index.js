@@ -14,7 +14,7 @@ var OptionKey = {
 
 function handler(event) {
     var request = event.request;
-    var originalImagePath = request.uri;
+    var originalRequestPath = request.uri;
     // 验证、处理和规范化查询参数中的请求操作
     var options = resolveOptions(request);
     // 如果找到有效操作，则重写规范化版本的路径
@@ -36,10 +36,10 @@ function handler(event) {
         if (options.bitrate) {
             optionArray.push(`${OptionKey.BITRATE}=${options.bitrate}`);
         }
-        request.uri = `${originalImagePath}/${optionArray.join(',')}`;
+        request.uri = `${originalRequestPath}/${optionArray.join(',')}`;
     } else {
         // 如果未找到有效参数，则使用 /original 路径后缀标记请求
-        request.uri = `${originalImagePath}/original`;
+        request.uri = `${originalRequestPath}/original`;
     }
 
     // 移除 ? 后的参数

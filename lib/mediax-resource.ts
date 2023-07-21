@@ -7,7 +7,7 @@ import * as cr from 'aws-cdk-lib/custom-resources';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 
-export interface MyCustomResourceProps {
+export interface MediaxResourceProps {
   AppId: string;
   Url: string;
 }
@@ -15,10 +15,10 @@ export interface MyCustomResourceProps {
 export class MediaxResource extends Construct {
   public readonly hostname: string;
 
-  constructor(scope: Construct, id: string, props: MyCustomResourceProps) {
+  constructor(scope: Construct, id: string, props: MediaxResourceProps) {
     super(scope, id);
 
-    const onEvent = new lambda.SingletonFunction(this, 'Singleton', {
+    const onEvent = new lambda.SingletonFunction(this, 'mediaxSingleton', {
       uuid: props.AppId,
       code: lambda.Code.fromAsset('functions/mediax-resource'),
       handler: 'index.on_event',
@@ -27,13 +27,12 @@ export class MediaxResource extends Construct {
       logRetention: logs.RetentionDays.ONE_DAY,
     });
 
-    const myProvider = new cr.Provider(this, 'MyProvider', {
+    const mediaxProvider = new cr.Provider(this, 'mediaxProvider', {
       onEventHandler: onEvent,
       logRetention: logs.RetentionDays.ONE_DAY
     });
 
-    const resource = new cdk.CustomResource(this, 'Resource1', { serviceToken: myProvider.serviceToken, properties: props });
-
+    const resource = new cdk.CustomResource(this, 'mediaxCustomResource', { serviceToken: mediaxProvider.serviceToken, properties: props });
     this.hostname = resource.getAtt('HostName').toString();
   }
 }

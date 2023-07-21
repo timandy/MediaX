@@ -160,8 +160,8 @@ exports.handler = async (event) => {
 };
 
 // 从源桶下载文件
-async function downloadFile(originalImagePath) {
-    return await S3.getObject({Bucket: S3_ORIGINAL_FILE_BUCKET, Key: originalImagePath}).promise();
+async function downloadFile(originalFilePath) {
+    return await S3.getObject({Bucket: S3_ORIGINAL_FILE_BUCKET, Key: originalFilePath}).promise();
 }
 
 // 上传文件到缓存桶
@@ -338,7 +338,7 @@ function resolveAudioFormat(format) {
 
 // 计算最终使用的码率, undefined 表示不要设置目标码率
 function computeBitrate(bitrate, audioFormat, inputExt) {
-    const defaultBitrate = '32k';
+    const defaultBitrate = '64k';
     //明确指定了目标格式
     if (audioFormat) {
         //目标格式支持码率, 返回参数的码率或默认码率
