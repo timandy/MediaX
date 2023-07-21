@@ -223,7 +223,7 @@ async function transAudio(audioFile, options, audioFileKey) {
     const inputExt = path.extname(audioFileKey);//带点号, 例如 .mp3
     const inputFilePath = path.join(tmpDir, `${uuidv4()}${inputExt}`);
     const outputExt = audioFormat ? `.${audioFormat.Format}` : inputExt;
-    const outputFilePath = path.join(tmpDir, `${uuidv4()}.${outputExt}`);
+    const outputFilePath = path.join(tmpDir, `${uuidv4()}${outputExt}`);
     //等待异步转换完成
     await new Promise((resolve, reject) => {
         //将下载的文件写入临时路径
