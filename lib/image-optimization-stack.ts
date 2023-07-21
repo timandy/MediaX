@@ -29,7 +29,7 @@ let S3_TRANSFORMED_IMAGE_CACHE_TTL = 'max-age=31622400';
 // Lambda Parameters
 let LAMBDA_MEMORY = '1500';
 let LAMBDA_TIMEOUT = '60';
-let LOG_TIMING = 'false';
+let LOG_TIMING = 'true';
 
 type ImageDeliveryCacheBehaviorConfig = {
   origin: any;
