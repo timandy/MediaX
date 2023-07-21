@@ -208,7 +208,7 @@ export class ImageOptimizationStack extends Stack {
           accessControlAllowHeaders: ['*'],
           accessControlAllowMethods: ['GET'],
           accessControlAllowOrigins: ['*'],
-          accessControlMaxAge: Duration.seconds(600),
+          accessControlMaxAge: Duration.hours(24),
           originOverride: false,
         },
         //打标记
