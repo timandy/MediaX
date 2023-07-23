@@ -67,15 +67,15 @@ exports.handler = async (event) => {
     console.log(`==> GET ${requestPath}`);
     const requestPathArray = requestPath.split('/');
     // 最后一个元素出栈 format=auto,width=100 或 original
-    const optionsPrefix = requestPathArray.pop();
+    const optionString = requestPathArray.pop();
     // 获取原始路径 images/rio/1.jpg
-    requestPathArray.shift();
+    requestPathArray.shift();//移除数组的第一个元素, 是空格
     const originFilePath = requestPathArray.join('/');
     // 缓存 key
-    const cacheKey = `${originFilePath}/${optionsPrefix}`;
+    const cacheKey = `${originFilePath}/${optionString}`;
     // 起始时间
     let startTime = performance.now();
-    // 下载源文件
+    // 下载原文件
     let originFileObj;
     try {
         originFileObj = await downloadFile(originFilePath);
@@ -86,12 +86,11 @@ exports.handler = async (event) => {
     }
     const originContentType = originFileObj.ContentType;
     const originMetadata = originFileObj.Metadata;
-    const originMetadataWithPrefix = addAmzMetaPrefix(originMetadata);
 
-    //不是图片, 上传源文件返回
-    const options = resolveOptions(optionsPrefix);//解析参数
-    if (optionsPrefix === 'original' || !isSupported(originContentType, options)) {
-        //上传
+    // 不需要转换, 上传原文件返回
+    const options = resolveOptions(optionString);//解析参数
+    if (optionString === 'original' || !isSupported(originContentType, options)) {
+        // 上传
         try {
             await uploadFile(originFileObj.Body, cacheKey, originContentType, originMetadata);
         } catch (error) {
@@ -100,12 +99,10 @@ exports.handler = async (event) => {
             // noinspection JSUnusedAssignment
             startTime = printTiming('Upload origin file', startTime);
         }
-        // 返回响应
+        // 返回原文件; 文件可能太大, Lambda 限制响应最大 6MB, 所以返回重定向地址, 让客户端重新请求一次, 从而回源到 S3
         return {
-            statusCode: 200,
-            headers: mergeObjects(originMetadataWithPrefix, {'Content-Type': originContentType, 'Cache-Control': TRANSFORMED_FILE_CACHE_TTL}),
-            isBase64Encoded: true,
-            body: originFileObj.Body.toString('base64')
+            statusCode: 302,
+            headers: {'Location': `/${originFilePath}`, 'Cache-Control': 'no-cache'}
         };
     }
 
@@ -141,22 +138,11 @@ exports.handler = async (event) => {
         printTiming('Upload transformed file', startTime);
     }
 
-    // 返回转换后的文件
-    if (shouldTransImage) {
-        //图片直接 base64 编码返回
-        return {
-            statusCode: 200,
-            headers: mergeObjects(originMetadataWithPrefix, {'Content-Type': transformedResult.ContentType, 'Cache-Control': TRANSFORMED_FILE_CACHE_TTL}),
-            isBase64Encoded: true,
-            body: transformedResult.Buff.toString('base64')
-        };
-    } else {
-        //音频太大返回重定向, 让客户端重新请求一次, 从而回源到 S3. Lambda 限制响应最大 6MB
-        return {
-            statusCode: 302,
-            headers: {'Location': `/${originFilePath}?${querystring.stringify(options)}`, 'Cache-Control': 'no-cache'}
-        };
-    }
+    // 返回转换后的文件; 文件可能太大, Lambda 限制响应最大 6MB, 所以返回重定向地址, 让客户端重新请求一次, 从而回源到 S3
+    return {
+        statusCode: 302,
+        headers: {'Location': `/${originFilePath}?${querystring.stringify(options)}`, 'Cache-Control': 'no-cache'}
+    };
 };
 
 // 从源桶下载文件
@@ -358,33 +344,6 @@ function computeBitrate(bitrate, audioFormat, inputExt) {
         return undefined;
     }
     return undefined;
-}
-
-// 合并对象
-function mergeObjects(...objs) {
-    if (!objs) {
-        return {};
-    }
-    const result = {};
-    for (let obj of objs) {
-        if (!obj) {
-            continue;
-        }
-        Object.assign(result, obj);
-    }
-    return result;
-}
-
-// 对 s3 元数据添加前缀
-function addAmzMetaPrefix(obj) {
-    if (!obj) {
-        return {};
-    }
-    const result = {};
-    for (let key of Object.keys(obj)) {
-        result[`x-amz-meta-${key}`] = obj[key];
-    }
-    return result;
 }
 
 // 打印阶段耗时
