@@ -58,6 +58,7 @@ AWS CDK 是一个开源软件开发框架，用于在代码中定义云基础设
 
 注意:
 
+* 部署前需要先安装包含 FFmpeg 库的 Lambda Layer，以支持音频转换。[安装脚本](./ffmpeg/install.sh)
 * 每部署一个 CloudFormation Stack 实例，只会针对一个 S3 桶启用媒体转换服务。
 * 如果要支持多个不同的桶，需要修改 Stack 名和源 S3 桶名，并确保不重名。
 
