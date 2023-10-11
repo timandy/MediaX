@@ -63,7 +63,7 @@ AWS CDK 是一个开源软件开发框架，用于在代码中定义云基础设
 * 如果要支持多个不同的桶，需要修改 Stack 名和源 S3 桶名，并确保不重名。
 
 ```
-git clone https://github.com/timandy/MediaX.git 
+git clone https://github.com/timandy/MediaX.git
 cd MediaX
 npm install
 cdk bootstrap
