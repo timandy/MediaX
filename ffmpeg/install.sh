@@ -3,13 +3,16 @@
 # 删除上次文件
 rm -f layer.zip
 
-# 下载 安装包
+# 创建下载目录
+mkdir -p download
+
+# 下载安装包
 if [[ ! -f 'download/ffmpeg-release-amd64-static.tar.xz' ]]; then
   curl -o '/tmp/ffmpeg-release-amd64-static.tar.xz' 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz'
   mv -f /tmp/ffmpeg-release-amd64-static.tar.xz download/ffmpeg-release-amd64-static.tar.xz
 fi
 
-# 下载 安装包
+# 下载安装包
 if [[ ! -f 'download/ffmpeg-release-amd64-static.tar.xz.md5' ]]; then
   curl -o '/tmp/ffmpeg-release-amd64-static.tar.xz.md5' 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz.md5'
   mv -f /tmp/ffmpeg-release-amd64-static.tar.xz.md5 download/ffmpeg-release-amd64-static.tar.xz.md5
