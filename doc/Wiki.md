@@ -36,7 +36,7 @@
 ## 音频格式转换
 
 请求特定变换的音频时需要在原请求路径的基础上增加 URL 参数。
-例如：`https://example.com/demo.mp3?format=aac&qua&bitrate=64k`
+例如：`https://example.com/demo.mp3?format=mp3&bitrate=64k`
 
 参数键说明：
 
