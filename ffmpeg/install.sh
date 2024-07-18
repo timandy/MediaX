@@ -54,7 +54,7 @@ aws lambda publish-layer-version \
     --description 'ffmpeg node layer' \
     --content "S3Bucket=$bucketName,S3Key=layer.zip" \
     --compatible-architectures 'x86_64' \
-    --compatible-runtimes 'nodejs12.x' 'nodejs14.x' 'nodejs16.x' 'nodejs18.x' \
+    --compatible-runtimes 'nodejs16.x' 'nodejs18.x' 'nodejs20.x' \
     --license-info 'https://www.ffmpeg.org/legal.html'
 
 # 删除临时 bucket
