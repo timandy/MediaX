@@ -102,7 +102,7 @@ exports.handler = async (event) => {
         // 返回原文件; 文件可能太大, Lambda 限制响应最大 6MB, 所以返回重定向地址, 让客户端重新请求一次, 从而回源到 S3
         return {
             statusCode: 302,
-            headers: {'Location': `/${originFilePath}`, 'Cache-Control': 'no-cache'}
+            headers: {'Location': `/${encodeURI(originFilePath)}`, 'Cache-Control': 'no-cache'}
         };
     }
 
@@ -141,7 +141,7 @@ exports.handler = async (event) => {
     // 返回转换后的文件; 文件可能太大, Lambda 限制响应最大 6MB, 所以返回重定向地址, 让客户端重新请求一次, 从而回源到 S3
     return {
         statusCode: 302,
-        headers: {'Location': `/${originFilePath}?${querystring.stringify(options)}`, 'Cache-Control': 'no-cache'}
+        headers: {'Location': `/${encodeURI(originFilePath)}?${querystring.stringify(options)}`, 'Cache-Control': 'no-cache'}
     };
 };
 
