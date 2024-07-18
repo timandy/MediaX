@@ -120,7 +120,7 @@ export class MediaxStack extends Stack {
     // 创建用于图像处理的 Lambda
     const mediaxLambda = new lambda.Function(this, 'mediaxLambda', {
       functionName: `MediaxProcess_${id}`,
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('functions/mediax-process'),
       timeout: Duration.seconds(parseInt(LAMBDA_TIMEOUT)),
