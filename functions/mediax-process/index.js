@@ -83,6 +83,7 @@ exports.handler = async (event) => {
     } finally {
         startTime = printTiming('Download origin file', startTime);
     }
+    const originBody = await readAllBytes(originFileObj.Body);
     const originContentType = originFileObj.ContentType;
     const originMetadata = originFileObj.Metadata;
 
@@ -91,7 +92,7 @@ exports.handler = async (event) => {
     if (optionString === 'original' || !isSupported(originContentType, options)) {
         // 上传
         try {
-            await uploadFile(originFileObj.Body, cacheKey, originContentType, originMetadata);
+            await uploadFile(originBody, cacheKey, originContentType, originMetadata);
         } catch (error) {
             return newError('Could not upload origin file to S3', error);
         } finally {
@@ -111,7 +112,7 @@ exports.handler = async (event) => {
     if (shouldTransImage) {
         // 转换图片
         try {
-            transformedResult = await transImage(originFileObj, options);
+            transformedResult = await transImage(originBody, originContentType, options);
         } catch (error) {
             return newError('Transforming image failed', error);
         } finally {
@@ -120,7 +121,7 @@ exports.handler = async (event) => {
     } else {
         // 转换音频
         try {
-            transformedResult = await transAudio(originFileObj, options, originFilePath);
+            transformedResult = await transAudio(originBody, originContentType, options, originFilePath);
         } catch (error) {
             return newError('Transforming audio failed', error);
         } finally {
@@ -168,9 +169,25 @@ async function uploadFile(body, filePath, contentType, metadata) {
     }
 }
 
+// 读取流返回 Buffer
+async function readAllBytes(readable) {
+    const chunks = [];
+    return await new Promise((resolve, reject) => {
+        readable.on('data', (chunk) => {
+            chunks.push(chunk);
+        });
+        readable.on('end', () => {
+            resolve(Buffer.concat(chunks));
+        });
+        readable.on('error', (err) => {
+            reject(err);
+        });
+    });
+}
+
 // 处理图片
-async function transImage(imageFile, options) {
-    let outputImage = sharp(imageFile.Body, {failOn: 'none'});
+async function transImage(imageBuffer, contentType, options) {
+    let outputImage = sharp(imageBuffer, {failOn: 'none'});
     const metadata = await outputImage.metadata();
     // 大小缩放
     const resizeOptions = {};
@@ -192,7 +209,7 @@ async function transImage(imageFile, options) {
     if (!imageFormat) {
         return {
             Buff: await outputImage.toBuffer(),
-            ContentType: imageFile.ContentType
+            ContentType: contentType
         };
     }
     // 有损
@@ -210,8 +227,8 @@ async function transImage(imageFile, options) {
     };
 }
 
-// 转音频
-async function transAudio(audioFile, options, audioFileKey) {
+// 处理音频
+async function transAudio(audioBuffer, contentType, options, audioFileKey) {
     //解析格式
     const audioFormat = resolveAudioFormat(options[OptionKey.FORMAT]);
     //临时文件
@@ -223,7 +240,7 @@ async function transAudio(audioFile, options, audioFileKey) {
     //等待异步转换完成
     await new Promise((resolve, reject) => {
         //将下载的文件写入临时路径
-        fs.writeFileSync(inputFilePath, audioFile.Body);
+        fs.writeFileSync(inputFilePath, audioBuffer);
         //创建转换命令
         const ffmpegCmd = ffmpeg(inputFilePath);
         //指定了目标格式
@@ -252,7 +269,7 @@ async function transAudio(audioFile, options, audioFileKey) {
     // 返回
     return {
         Buff: fs.readFileSync(outputFilePath),
-        ContentType: audioFormat ? audioFormat.ContentType : audioFile.ContentType
+        ContentType: audioFormat ? audioFormat.ContentType : contentType
     };
 }
 
