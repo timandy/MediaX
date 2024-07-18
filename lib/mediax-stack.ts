@@ -64,7 +64,7 @@ export class MediaxStack extends Stack {
 
     // 未指定源桶, 直接抛出异常
     if (!S3_ORIGIN_BUCKET_NAME) {
-      throw new Error('S3_ORIGIN_BUCKET_NAME can not be empty')
+      throw new Error('S3_ORIGIN_BUCKET_NAME can not be empty');
     }
 
     // 创建一个自定义密码, 访问 lambda 时使用
@@ -84,9 +84,9 @@ export class MediaxStack extends Stack {
       autoDeleteObjects: true,
       lifecycleRules: [
         {
-          expiration: Duration.days(parseInt(S3_CACHE_BUCKET_EXPIRATION_DAYS)), //缩略图存储天数, 默认 90 天
-        },
-      ],
+          expiration: Duration.days(parseInt(S3_CACHE_BUCKET_EXPIRATION_DAYS)) //缩略图存储天数, 默认 90 天
+        }
+      ]
     });
     new CfnOutput(this, 'mediaxCacheBucketCfn', {
       description: 'S3 bucket where transformed files are stored',
@@ -99,11 +99,11 @@ export class MediaxStack extends Stack {
       statements: [
         new iam.PolicyStatement({
           actions: ['s3:GetObject'],
-          resources: ['arn:aws:s3:::' + originBucket.bucketName + '/*'],
+          resources: ['arn:aws:s3:::' + originBucket.bucketName + '/*']
         }),
         new iam.PolicyStatement({
           actions: ['s3:PutObject'],
-          resources: ['arn:aws:s3:::' + cacheBucket.bucketName + '/*'],
+          resources: ['arn:aws:s3:::' + cacheBucket.bucketName + '/*']
         })
       ]
     });
@@ -114,7 +114,7 @@ export class MediaxStack extends Stack {
       cacheBucketName: cacheBucket.bucketName,
       cacheTTL: S3_CACHE_BUCKET_CACHE_TTL,
       secretKey: SECRET_KEY,
-      logTiming: LOG_TIMING,
+      logTiming: LOG_TIMING
     };
 
     // 创建用于图像处理的 Lambda
@@ -133,7 +133,7 @@ export class MediaxStack extends Stack {
 
     // 启用 Lambda URL 地址访问
     const mediaxLambdaURL = mediaxLambda.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.NONE,
+      authType: lambda.FunctionUrlAuthType.NONE
     });
 
     // 利用自定义资源获取 Lambda URL 的主机名
@@ -145,21 +145,21 @@ export class MediaxStack extends Stack {
     // 创建 CloudFront 源组, 首先尝试回源到缩略图桶, 如果失败则执行 Lambda
     const deliveryOrigin = new origins.OriginGroup({
       primaryOrigin: new origins.S3Origin(cacheBucket, {
-        originShieldRegion: CLOUDFRONT_ORIGIN_SHIELD_REGION,
+        originShieldRegion: CLOUDFRONT_ORIGIN_SHIELD_REGION
       }),
       fallbackOrigin: new origins.HttpOrigin(mediaxLambdaResource.hostname, {
         originShieldRegion: CLOUDFRONT_ORIGIN_SHIELD_REGION,
         customHeaders: {
-          'x-origin-secret-header': SECRET_KEY,
-        },
+          'x-origin-secret-header': SECRET_KEY
+        }
       }),
-      fallbackStatusCodes: [403],
+      fallbackStatusCodes: [403]
     });
 
     // 创建 CloudFront 函数, 用于 url 重写
     const urlRewriteFunc = new cloudfront.Function(this, 'mediaxUrlRewrite', {
       functionName: `MediaxUrlRewrite_${id}`,
-      code: cloudfront.FunctionCode.fromFile({ filePath: 'functions/mediax-urlrewrite/index.js' }),
+      code: cloudfront.FunctionCode.fromFile({ filePath: 'functions/mediax-urlrewrite/index.js' })
     });
 
     // 创建 CloudFront 缓存策略
@@ -178,9 +178,9 @@ export class MediaxStack extends Stack {
       cachePolicy: cfCachePolicy,
       functionAssociations: [{
         eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
-        function: urlRewriteFunc,
-      }],
-    }
+        function: urlRewriteFunc
+      }]
+    };
 
     if (CLOUDFRONT_CORS_ENABLED === 'true') {
       //设置响应头策略
@@ -192,13 +192,13 @@ export class MediaxStack extends Stack {
           accessControlAllowMethods: ['GET'],
           accessControlAllowOrigins: ['*'],
           accessControlMaxAge: Duration.hours(24),
-          originOverride: false,
+          originOverride: false
         },
         //打标记
         customHeadersBehavior: {
           customHeaders: [
             { header: 'x-aws-mediax', value: 'v1.0', override: true }
-          ],
+          ]
         }
       });
 

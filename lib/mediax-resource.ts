@@ -24,7 +24,7 @@ export class MediaxResource extends Construct {
       handler: 'index.on_event',
       timeout: cdk.Duration.seconds(300),
       runtime: lambda.Runtime.PYTHON_3_9,
-      logRetention: logs.RetentionDays.ONE_DAY,
+      logRetention: logs.RetentionDays.ONE_DAY
     });
 
     const mediaxProvider = new cr.Provider(this, 'mediaxProvider', {
