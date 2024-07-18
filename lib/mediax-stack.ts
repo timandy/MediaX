@@ -25,6 +25,8 @@ let CLOUDFRONT_DOMAIN_NAME: string;
 // Lambda 参数
 let LAMBDA_MEMORY = '1500';
 let LAMBDA_TIMEOUT = '60';
+// Lambda 层
+let FFMPEG_LAYER_VERSION = '1';
 // 是否打印耗时信息
 let LOG_TIMING = 'true';
 
@@ -59,6 +61,8 @@ export class MediaxStack extends Stack {
     // 获取 Lambda 参数
     LAMBDA_MEMORY = this.node.tryGetContext('LAMBDA_MEMORY') || LAMBDA_MEMORY;
     LAMBDA_TIMEOUT = this.node.tryGetContext('LAMBDA_TIMEOUT') || LAMBDA_TIMEOUT;
+    // 获取 Lambda 层
+    FFMPEG_LAYER_VERSION = this.node.tryGetContext('FFMPEG_LAYER_VERSION') || FFMPEG_LAYER_VERSION;
     // 获取日志参数
     LOG_TIMING = this.node.tryGetContext('LOG_TIMING') || LOG_TIMING;
 
@@ -127,7 +131,7 @@ export class MediaxStack extends Stack {
       memorySize: parseInt(LAMBDA_MEMORY),
       environment: lambdaEnv,
       logRetention: logs.RetentionDays.ONE_DAY,
-      layers: [lambda.LayerVersion.fromLayerVersionArn(this, 'mediaxFFmpegLayer', `arn:aws:lambda:${Aws.REGION}:${Aws.ACCOUNT_ID}:layer:ffmpeg-node-layer:1`)]
+      layers: [lambda.LayerVersion.fromLayerVersionArn(this, 'mediaxFFmpegLayer', `arn:aws:lambda:${Aws.REGION}:${Aws.ACCOUNT_ID}:layer:ffmpeg-node-layer:${FFMPEG_LAYER_VERSION}`)]
     });
     mediaxLambda.role?.attachInlinePolicy(lambdaPolicy);
 
