@@ -14,7 +14,7 @@ const ORIGIN_SHIELD_MAPPING = new Map([['af-south-1', 'eu-west-2'], ['ap-east-1'
   'sa-east-1', 'sa-east-1'], ['us-east-1', 'us-east-1'], ['us-east-2', 'us-east-2'], ['us-west-1', 'us-west-1'], ['us-west-2', 'us-west-2']]);
 
 // 源桶参数
-let S3_ORIGIN_BUCKET_NAME: string;
+let S3_ORIGIN_BUCKET_NAME: string = 'dulwich-mock-public';
 // 缓存桶参数
 let S3_CACHE_BUCKET_EXPIRATION_DAYS = '90';
 let S3_CACHE_BUCKET_CACHE_TTL = 'max-age=31622400';
@@ -26,7 +26,7 @@ let CLOUDFRONT_DOMAIN_NAME: string;
 let LAMBDA_MEMORY = '1500';
 let LAMBDA_TIMEOUT = '60';
 // Lambda 层
-let FFMPEG_LAYER_VERSION = '1';
+let FFMPEG_LAYER_VERSION = '2';
 // 是否打印耗时信息
 let LOG_TIMING = 'true';
 
