@@ -1,16 +1,15 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT-0
 
-const AWS = require('aws-sdk');
+const {S3Client, GetObjectCommand, PutObjectCommand} = require('@aws-sdk/client-s3');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
 const querystring = require('querystring');
 const {v4: uuidv4} = require('uuid');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
 
-const S3 = new AWS.S3({signatureVersion: 'v4', httpOptions: {agent: new https.Agent({keepAlive: true})}});
+const S3 = new S3Client({});
 const S3_ORIGINAL_FILE_BUCKET = process.env.originBucketName;
 const S3_TRANSFORMED_FILE_BUCKET = process.env.cacheBucketName;
 const TRANSFORMED_FILE_CACHE_TTL = process.env.cacheTTL;
@@ -147,20 +146,25 @@ exports.handler = async (event) => {
 
 // 从源桶下载文件
 async function downloadFile(originalFilePath) {
-    return await S3.getObject({Bucket: S3_ORIGINAL_FILE_BUCKET, Key: originalFilePath}).promise();
+    const command = new GetObjectCommand({
+        Bucket: S3_ORIGINAL_FILE_BUCKET,
+        Key: originalFilePath
+    });
+    return await S3.send(command);
 }
 
 // 上传文件到缓存桶
 async function uploadFile(body, filePath, contentType, metadata) {
     if (S3_TRANSFORMED_FILE_BUCKET) {
-        await S3.putObject({
+        const command = new PutObjectCommand({
             Body: body,
             Bucket: S3_TRANSFORMED_FILE_BUCKET,
             Key: filePath,
             ContentType: contentType,
             CacheControl: TRANSFORMED_FILE_CACHE_TTL,
             Metadata: metadata
-        }).promise();
+        });
+        await S3.send(command);
     }
 }
 
